@@ -710,7 +710,8 @@ const PLACES = [
 const CATS = {"cave": {"label": "Caves", "color": "#8B5E3C", "emoji": "🦇"}, "museum": {"label": "Museums", "color": "#6A4C93", "emoji": "🏛"}, "arcade": {"label": "Arcades", "color": "#E4572E", "emoji": "🕹"}, "watch": {"label": "Watches", "color": "#1F6F8B", "emoji": "⌚"}, "food": {"label": "Food", "color": "#C2185B", "emoji": "🍜"}, "farmers": {"label": "Markets", "color": "#2E9E4F", "emoji": "🌾"}, "park": {"label": "Outdoors", "color": "#2E7D32", "emoji": "🌳"}, "sight": {"label": "Sights", "color": "#1565C0", "emoji": "📍"}, "fun": {"label": "Fun", "color": "#F9A825", "emoji": "🎨"}, "travel": {"label": "Travel", "color": "#455A64", "emoji": "✈️"}};
 const DAYLABEL = {"all": "All", "25": "Sat 25", "26": "Sun 26", "27": "Mon 27", "28": "Tue 28", "29": "Wed 29", "30": "Thu 30", "31": "Fri 31", "extras": "Extras"};
 
-const map = L.map('map', {zoomControl:true, scrollWheelZoom:true}).setView([29.9,-98.3], 7);
+const map = L.map('map', {zoomControl:false, scrollWheelZoom:true}).setView([29.9,-98.3], 7);
+L.control.zoom({position: 'topright'}).addTo(map);
 setTimeout(() => map.invalidateSize(), 60);
 
 const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
