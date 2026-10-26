@@ -6,46 +6,46 @@
 <title>Texas Trip · Oct 25 – Nov 1</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;color:#1f2937}
-  #map{position:absolute;inset:0;background:#eef1f4}
-  .bar{position:absolute;z-index:1000;top:0;left:0;right:0;background:rgba(255,255,255,.94);
-       backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb;padding:8px 10px;display:flex;flex-wrap:wrap;
-       gap:6px;align-items:center}
+  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+            color:#1f2937;display:flex;flex-direction:column;overflow:hidden}
+  .bar{flex:0 0 auto;background:#fff;border-bottom:1px solid #e5e7eb;padding:7px 10px;display:flex;flex-wrap:wrap;
+       gap:6px;align-items:center;z-index:1200}
   .bar h1{font-size:13px;font-weight:650;margin:0 8px 0 2px;letter-spacing:.01em;white-space:nowrap}
   .chip{border:1px solid #d7dbe0;background:#fff;border-radius:999px;padding:4px 10px;font-size:11.5px;
-        cursor:pointer;color:#374151;line-height:1.35;transition:.12s}
+        cursor:pointer;color:#374151;line-height:1.35;transition:.12s;font-family:inherit}
   .chip:hover{border-color:#9aa3ad}
   .chip.active{background:#111827;border-color:#111827;color:#fff}
-  .panel{position:absolute;z-index:999;top:52px;left:10px;bottom:10px;width:250px;background:rgba(255,255,255,.96);
-         border:1px solid #e5e7eb;border-radius:10px;overflow:auto;box-shadow:0 4px 18px rgba(0,0,0,.08);
-         font-size:12px;padding:6px}
+  #stage{flex:1 1 auto;position:relative;min-height:0}
+  #map{position:absolute;inset:0;background:#eef1f4}
+  .panel{position:absolute;z-index:900;top:10px;left:10px;bottom:10px;width:252px;background:rgba(255,255,255,.96);
+         border:1px solid #e5e7eb;border-radius:10px;overflow-y:auto;box-shadow:0 4px 18px rgba(0,0,0,.10);
+         font-size:12px;padding:4px 4px 8px}
   .panel::-webkit-scrollbar{width:6px} .panel::-webkit-scrollbar-thumb{background:#cfd4da;border-radius:3px}
   .row{display:flex;gap:7px;padding:5px 6px;border-radius:7px;cursor:pointer;align-items:flex-start}
   .row:hover{background:#f3f4f6}
   .row .nm{font-weight:550;line-height:1.25}
-  .row .sub{color:#6b7280;font-size:10.5px;line-height:1.25}
+  .row .sub{color:#6b7280;font-size:10.5px;line-height:1.3}
   .row .e{font-size:12px;line-height:1.5}
-  .dayhead{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:8px 6px 3px;font-weight:650}
-  .legend{position:absolute;z-index:998;right:10px;bottom:10px;background:rgba(255,255,255,.95);border:1px solid #e5e7eb;
-          border-radius:9px;padding:7px 9px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;
-          box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  .leg{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;opacity:1}
-  .leg.off{opacity:.32}
+  .dayhead{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:9px 6px 3px;
+           font-weight:650;position:sticky;top:0;background:rgba(255,255,255,.96)}
+  .legend{position:absolute;z-index:900;right:10px;bottom:22px;background:rgba(255,255,255,.96);
+          border:1px solid #e5e7eb;border-radius:9px;padding:7px 9px;font-size:11px;
+          display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  .leg{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;transition:.12s}
+  .leg.off{opacity:.3}
   .dot{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
-        font-size:8px;color:#fff}
+        font-size:8px;color:#fff;flex:0 0 auto}
   .pin{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-       font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-  .pin.dim{opacity:.25;filter:grayscale(.6)}
+       font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}
   .leaflet-popup-content{margin:10px 12px;font-size:12.5px;line-height:1.4}
   .leaflet-popup-content b{font-size:13.5px}
+  .pop .n{color:#6b7280;font-size:11px;margin-top:3px}
   .pop a{color:#0f62fe;text-decoration:none;margin-right:10px;font-size:11.5px}
-  .pop .n{color:#6b7280;font-size:11px;margin-top:2px}
-  .leaflet-container a.leaflet-popup-close-button{color:#9ca3af}
-  @media (max-width:720px){.panel{display:none} .legend{grid-template-columns:1fr}}
+  .count{font-size:10.5px;color:#9ca3af;margin-left:auto;padding-right:4px;white-space:nowrap}
+  @media (max-width:760px){.panel{display:none} .legend{grid-template-columns:1fr} .bar h1{font-size:12px}}
 </style>
 </head>
 <body>
-<div id="map"></div>
 <div class="bar">
   <h1>Texas Trip</h1>
   <button class="chip active" data-day="all">All</button>
@@ -57,9 +57,12 @@
 <button class="chip" data-day="30">Thu 30</button>
 <button class="chip" data-day="31">Fri 31</button>
 <button class="chip" data-day="extras">Extras</button>
+  <span class="count" id="count"></span>
 </div>
-<div class="panel" id="panel"></div>
-<div class="legend" id="legend"><div class="leg" data-cat="cave"><span class="dot" style="background:#8B5E3C">🦇</span>Caves</div>
+<div id="stage">
+  <div id="map"></div>
+  <div class="panel" id="panel"></div>
+  <div class="legend" id="legend"><div class="leg" data-cat="cave"><span class="dot" style="background:#8B5E3C">🦇</span>Caves</div>
 <div class="leg" data-cat="museum"><span class="dot" style="background:#6A4C93">🏛</span>Museums</div>
 <div class="leg" data-cat="arcade"><span class="dot" style="background:#E4572E">🕹</span>Arcades</div>
 <div class="leg" data-cat="watch"><span class="dot" style="background:#1F6F8B">⌚</span>Watches</div>
@@ -69,6 +72,7 @@
 <div class="leg" data-cat="sight"><span class="dot" style="background:#1565C0">📍</span>Sights</div>
 <div class="leg" data-cat="fun"><span class="dot" style="background:#F9A825">🎨</span>Fun</div>
 <div class="leg" data-cat="travel"><span class="dot" style="background:#455A64">✈️</span>Travel</div></div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const PLACES = [
@@ -707,10 +711,16 @@ const CATS = {"cave": {"label": "Caves", "color": "#8B5E3C", "emoji": "🦇"}, "
 const DAYLABEL = {"all": "All", "25": "Sat 25", "26": "Sun 26", "27": "Mon 27", "28": "Tue 28", "29": "Wed 29", "30": "Thu 30", "31": "Fri 31", "extras": "Extras"};
 
 const map = L.map('map', {zoomControl:true, scrollWheelZoom:true}).setView([29.9,-98.3], 7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 20
+setTimeout(() => map.invalidateSize(), 60);
+
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
+const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  maxZoom: 17, subdomains: 'abc',
+  attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Style &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'
+});
+L.control.layers({'Streets': osm, 'Terrain': topo}, null, {position: 'topright', collapsed: true}).addTo(map);
 
 let activeDay = 'all';
 const offCats = new Set();
@@ -722,7 +732,6 @@ function matches(p) {
   if (activeDay === 'extras') return p.days.length === 0;
   return p.days.includes(activeDay);
 }
-
 function gmaps(p) {
   return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(p.lat + ',' + p.lon);
 }
@@ -736,9 +745,9 @@ PLACES.forEach(p => {
   const m = L.marker([p.lat, p.lon], {icon}).addTo(map);
   const site = p.url ? '<a href="' + p.url + '" target="_blank" rel="noopener">Website</a>' : '';
   m.bindPopup('<div class="pop"><b>' + p.name + '</b>' +
-    (p.note ? '<div class="n" style="color:#374151;margin-top:3px">' + p.note + '</div>' : '') +
+    (p.note ? '<div class="n" style="color:#374151">' + p.note + '</div>' : '') +
     '<div class="n">' + p.addr + '</div>' +
-    '<div style="margin-top:5px"><a href="' + gmaps(p) + '" target="_blank" rel="noopener">Directions</a>' + site + '</div></div>');
+    '<div style="margin-top:6px"><a href="' + gmaps(p) + '" target="_blank" rel="noopener">Directions</a>' + site + '</div></div>');
   markers[p.id] = m;
 });
 
@@ -749,25 +758,25 @@ function renderPanel() {
   order.forEach(d => {
     const items = vis.filter(p => d === 'extras' ? p.days.length === 0 : p.days.includes(d));
     if (!items.length) return;
-    h += '<div class="dayhead">' + DAYLABEL[d] + '</div>';
+    h += '<div class="dayhead">' + DAYLABEL[d] + (d === 'extras' ? ' · not scheduled' : '') + '</div>';
     items.forEach(p => {
       h += '<div class="row" data-id="' + p.id + '"><span class="e">' + CATS[p.cat].emoji + '</span>' +
            '<span><span class="nm">' + p.name + '</span><span class="sub"><br>' + (p.note || p.addr) + '</span></span></div>';
     });
   });
-  document.getElementById('panel').innerHTML = h;
+  document.getElementById('panel').innerHTML = h || '<div class="dayhead">nothing selected</div>';
+  document.getElementById('count').textContent = vis.length + ' of ' + PLACES.length + ' pins';
   document.querySelectorAll('.row').forEach(r => r.onclick = () => {
     const p = PLACES.find(x => x.id === r.dataset.id);
-    map.flyTo([p.lat, p.lon], 14, {duration: .7});
-    setTimeout(() => markers[p.id].openPopup(), 750);
+    map.flyTo([p.lat, p.lon], 15, {duration: .7});
+    setTimeout(() => markers[p.id].openPopup(), 760);
   });
 }
 
 function refresh() {
   PLACES.forEach(p => {
-    const el = markers[p.id].getElement();
-    if (matches(p)) { markers[p.id].addTo(map); if (el) el.querySelector('.pin').classList.remove('dim'); }
-    else { map.removeLayer(markers[p.id]); }
+    if (matches(p)) markers[p.id].addTo(map);
+    else map.removeLayer(markers[p.id]);
   });
   renderPanel();
 }
@@ -779,7 +788,7 @@ document.querySelectorAll('.chip').forEach(b => b.onclick = () => {
   refresh();
   const vis = PLACES.filter(matches);
   if (vis.length && activeDay !== 'all') {
-    map.fitBounds(L.latLngBounds(vis.map(p => [p.lat, p.lon])).pad(.25), {maxZoom: 12});
+    map.fitBounds(L.latLngBounds(vis.map(p => [p.lat, p.lon])).pad(.22), {maxZoom: 12});
   }
 });
 
