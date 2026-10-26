@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Texas Trip · Oct 25 – Nov 1</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;color:#1f2937}
+  #map{position:absolute;inset:0;background:#eef1f4}
+  .bar{position:absolute;z-index:1000;top:0;left:0;right:0;background:rgba(255,255,255,.94);
+       backdrop-filter:blur(8px);border-bottom:1px solid #e5e7eb;padding:8px 10px;display:flex;flex-wrap:wrap;
+       gap:6px;align-items:center}
+  .bar h1{font-size:13px;font-weight:650;margin:0 8px 0 2px;letter-spacing:.01em;white-space:nowrap}
+  .chip{border:1px solid #d7dbe0;background:#fff;border-radius:999px;padding:4px 10px;font-size:11.5px;
+        cursor:pointer;color:#374151;line-height:1.35;transition:.12s}
+  .chip:hover{border-color:#9aa3ad}
+  .chip.active{background:#111827;border-color:#111827;color:#fff}
+  .panel{position:absolute;z-index:999;top:52px;left:10px;bottom:10px;width:250px;background:rgba(255,255,255,.96);
+         border:1px solid #e5e7eb;border-radius:10px;overflow:auto;box-shadow:0 4px 18px rgba(0,0,0,.08);
+         font-size:12px;padding:6px}
+  .panel::-webkit-scrollbar{width:6px} .panel::-webkit-scrollbar-thumb{background:#cfd4da;border-radius:3px}
+  .row{display:flex;gap:7px;padding:5px 6px;border-radius:7px;cursor:pointer;align-items:flex-start}
+  .row:hover{background:#f3f4f6}
+  .row .nm{font-weight:550;line-height:1.25}
+  .row .sub{color:#6b7280;font-size:10.5px;line-height:1.25}
+  .row .e{font-size:12px;line-height:1.5}
+  .dayhead{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:8px 6px 3px;font-weight:650}
+  .legend{position:absolute;z-index:998;right:10px;bottom:10px;background:rgba(255,255,255,.95);border:1px solid #e5e7eb;
+          border-radius:9px;padding:7px 9px;font-size:11px;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;
+          box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .leg{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;opacity:1}
+  .leg.off{opacity:.32}
+  .dot{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+        font-size:8px;color:#fff}
+  .pin{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+       font-size:11px;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .pin.dim{opacity:.25;filter:grayscale(.6)}
+  .leaflet-popup-content{margin:10px 12px;font-size:12.5px;line-height:1.4}
+  .leaflet-popup-content b{font-size:13.5px}
+  .pop a{color:#0f62fe;text-decoration:none;margin-right:10px;font-size:11.5px}
+  .pop .n{color:#6b7280;font-size:11px;margin-top:2px}
+  .leaflet-container a.leaflet-popup-close-button{color:#9ca3af}
+  @media (max-width:720px){.panel{display:none} .legend{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="bar">
+  <h1>Texas Trip</h1>
+  <button class="chip active" data-day="all">All</button>
+<button class="chip" data-day="25">Sat 25</button>
+<button class="chip" data-day="26">Sun 26</button>
+<button class="chip" data-day="27">Mon 27</button>
+<button class="chip" data-day="28">Tue 28</button>
+<button class="chip" data-day="29">Wed 29</button>
+<button class="chip" data-day="30">Thu 30</button>
+<button class="chip" data-day="31">Fri 31</button>
+<button class="chip" data-day="extras">Extras</button>
+</div>
+<div class="panel" id="panel"></div>
+<div class="legend" id="legend"><div class="leg" data-cat="cave"><span class="dot" style="background:#8B5E3C">🦇</span>Caves</div>
+<div class="leg" data-cat="museum"><span class="dot" style="background:#6A4C93">🏛</span>Museums</div>
+<div class="leg" data-cat="arcade"><span class="dot" style="background:#E4572E">🕹</span>Arcades</div>
+<div class="leg" data-cat="watch"><span class="dot" style="background:#1F6F8B">⌚</span>Watches</div>
+<div class="leg" data-cat="food"><span class="dot" style="background:#C2185B">🍜</span>Food</div>
+<div class="leg" data-cat="farmers"><span class="dot" style="background:#2E9E4F">🌾</span>Markets</div>
+<div class="leg" data-cat="park"><span class="dot" style="background:#2E7D32">🌳</span>Outdoors</div>
+<div class="leg" data-cat="sight"><span class="dot" style="background:#1565C0">📍</span>Sights</div>
+<div class="leg" data-cat="fun"><span class="dot" style="background:#F9A825">🎨</span>Fun</div>
+<div class="leg" data-cat="travel"><span class="dot" style="background:#455A64">✈️</span>Travel</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PLACES = [
+ {
+  "id": "riverwalk",
+  "name": "San Antonio River Walk",
+  "cat": "sight",
+  "days": [
+   "25",
+   "26"
+  ],
+  "note": "Night stroll + boat tour",
+  "url": "https://www.thesanantonioriverwalk.com/",
+  "lat": 29.424781,
+  "lon": -98.4886887,
+  "addr": "San Antonio Casino Club Building, River Walk, Hemisfair, Downtown"
+ },
+ {
+  "id": "alamoquarry",
+  "name": "Alamo Heights Farmers Market (Alamo Quarry)",
+  "cat": "farmers",
+  "days": [
+   "26"
+  ],
+  "note": "Sun 10am–2pm, producers-only",
+  "url": "https://www.alamoquarry.com/",
+  "lat": 29.4962615,
+  "lon": -98.4799046,
+  "addr": "255 E Basse Rd, San Antonio, TX 78209"
+ },
+ {
+  "id": "pearl",
+  "name": "Pearl Weekend Market",
+  "cat": "farmers",
+  "days": [
+   "26"
+  ],
+  "note": "Sun 10am–2pm Makers Market",
+  "url": "https://atpearl.com/",
+  "lat": 29.4423775,
+  "lon": -98.48020749999999,
+  "addr": "312 Pearl Pkwy, San Antonio, TX 78215"
+ },
+ {
+  "id": "cascade",
+  "name": "Cascade Caverns",
+  "cat": "cave",
+  "days": [
+   "26"
+  ],
+  "note": "Oldest touring cave in TX, walk-up hourly tours",
+  "url": "https://www.cascadecaverns.com/",
+  "lat": 29.7636914,
+  "lon": -98.6788873,
+  "addr": "Cascade Caverns, 226, Cascade Caverns Road, Boerne"
+ },
+ {
+  "id": "dragonclaw",
+  "name": "Dragon Claw (claw arcade)",
+  "cat": "arcade",
+  "days": [
+   "26"
+  ],
+  "note": "Claw-only arcade, Sun 11am–9pm",
+  "url": "",
+  "lat": 29.4948885,
+  "lon": -98.43212919999999,
+  "addr": "1533 Austin Hwy #105, San Antonio, TX 78218"
+ },
+ {
+  "id": "kimura",
+  "name": "Kimura (date night)",
+  "cat": "food",
+  "days": [
+   "26"
+  ],
+  "note": "Date night — izakaya, ramen",
+  "url": "https://kimurasa.com/",
+  "lat": 29.4284975,
+  "lon": -98.4914734,
+  "addr": "Kimura, North Saint Mary's Street, Downtown, San Antonio"
+ },
+ {
+  "id": "naturalbridge",
+  "name": "Natural Bridge Caverns",
+  "cat": "cave",
+  "days": [
+   "27"
+  ],
+  "note": "Discovery Tour + Twisted Trails zip/ropes",
+  "url": "https://naturalbridgecaverns.com/",
+  "lat": 29.6952636,
+  "lon": -98.3444147,
+  "addr": "Natural Bridge Caverns, 26495, Natural Bridge Caverns Road, San Antonio"
+ },
+ {
+  "id": "watchrow",
+  "name": "8000 Broadway watch row",
+  "cat": "watch",
+  "days": [
+   "27"
+  ],
+  "note": "Exclusive Timepieces #105 + Broadway Watches #101, close 6pm",
+  "url": "",
+  "lat": 29.4953885,
+  "lon": -98.4665252,
+  "addr": "Broadway, Alamo Heights, Bexar County, Texas"
+ },
+ {
+  "id": "round1",
+  "name": "Round1 (North Star Mall)",
+  "cat": "arcade",
+  "days": [
+   "27"
+  ],
+  "note": "UFO catchers, open till 2am",
+  "url": "",
+  "lat": 29.5181594,
+  "lon": -98.4941087,
+  "addr": "7400 San Pedro Ave, San Antonio, TX 78216"
+ },
+ {
+  "id": "gurinsky",
+  "name": "Gurinsky's Fine Jewelry",
+  "cat": "watch",
+  "days": [
+   "27"
+  ],
+  "note": "Pre-owned Rolex, same mall as Round1",
+  "url": "",
+  "lat": 29.5194677,
+  "lon": -98.494108,
+  "addr": "7400 San Pedro Ave, San Antonio, TX 78216"
+ },
+ {
+  "id": "witte",
+  "name": "Witte Museum",
+  "cat": "museum",
+  "days": [
+   "28"
+  ],
+  "note": "Dinosaurs + Texas history, 2–3 hrs",
+  "url": "https://www.wittemuseum.org/",
+  "lat": 29.4619955,
+  "lon": -98.4671185,
+  "addr": "The Witte Museum, 3801, Broadway, San Antonio"
+ },
+ {
+  "id": "drivein",
+  "name": "Stars & Stripes Drive-In (New Braunfels)",
+  "cat": "sight",
+  "days": [
+   "28"
+  ],
+  "note": "Gates 7:30pm, retro double feature",
+  "url": "https://nb.driveinusa.com/",
+  "lat": 29.7239255,
+  "lon": -98.0438367,
+  "addr": "Stars and Stripes Drive-In Theatre, 1178, Kroesche Lane, New Braunfels"
+ },
+ {
+  "id": "innerspace",
+  "name": "Inner Space Cavern",
+  "cat": "cave",
+  "days": [
+   "29"
+  ],
+  "note": "Tours every 20 min, Ice Age fossils",
+  "url": "https://innerspacecavern.com/",
+  "lat": 30.607888,
+  "lon": -97.6880973,
+  "addr": "Inner Space Cavern, South Interstate 35, Georgetown, Williamson County"
+ },
+ {
+  "id": "txscience",
+  "name": "Texas Science & Natural History Museum",
+  "cat": "museum",
+  "days": [
+   "29"
+  ],
+  "note": "UT campus",
+  "url": "https://sciencemuseum.utexas.edu/",
+  "lat": 30.2870325,
+  "lon": -97.7323526,
+  "addr": "2400 Trinity St, Austin, TX 78712"
+ },
+ {
+  "id": "ansc",
+  "name": "Austin Nature & Science Center",
+  "cat": "museum",
+  "days": [
+   "29"
+  ],
+  "note": "Free, walk-in, Zilker Park",
+  "url": "",
+  "lat": 30.272161599999997,
+  "lon": -97.7733291,
+  "addr": "2389 Stratford Dr, Austin, TX 78746"
+ },
+ {
+  "id": "zilker",
+  "name": "Zilker Botanical Garden",
+  "cat": "park",
+  "days": [
+   "29"
+  ],
+  "note": "28 acres, themed gardens",
+  "url": "https://zilkergarden.org/",
+  "lat": 30.2695511,
+  "lon": -97.773003,
+  "addr": "Zilker Botanical Garden, Austin, Travis County, Texas"
+ },
+ {
+  "id": "longhorn",
+  "name": "Longhorn Cavern State Park",
+  "cat": "cave",
+  "days": [
+   "30"
+  ],
+  "note": "CCC-built cavern, ~90 min tour, 1.5 hr NW",
+  "url": "https://visitlonghorncavern.com/",
+  "lat": 30.6860569,
+  "lon": -98.3521389,
+  "addr": "Longhorn Cavern State Park, 6211, Burnet, Burnet County"
+ },
+ {
+  "id": "qiaustin",
+  "name": "Qi Austin (date night)",
+  "cat": "food",
+  "days": [
+   "30"
+  ],
+  "note": "Date night — dim sum, soup dumplings",
+  "url": "https://qiaustin.com/",
+  "lat": 30.2706213,
+  "lon": -97.7524179,
+  "addr": "835 W 6th St #114, Austin, TX 78703"
+ },
+ {
+  "id": "soco",
+  "name": "South Congress Ave",
+  "cat": "sight",
+  "days": [
+   "31"
+  ],
+  "note": "Morning stroll, food trucks",
+  "url": "",
+  "lat": 30.2041019,
+  "lon": -97.775144,
+  "addr": "South Congress Avenue, Little Texas, Austin, Travis County"
+ },
+ {
+  "id": "korman",
+  "name": "Korman Jewel House",
+  "cat": "watch",
+  "days": [
+   "29"
+  ],
+  "note": "Rolex + CPO, 5 min from UT",
+  "url": "",
+  "lat": 30.2981905,
+  "lon": -97.7479331,
+  "addr": "The Jewel House by KORMAN, 2901, North Lamar Boulevard, Heritage"
+ },
+ {
+  "id": "mfe",
+  "name": "McAllen Intl Airport (MFE)",
+  "cat": "travel",
+  "days": [
+   "25",
+   "31"
+  ],
+  "note": "Land Oct 25 4pm / fly out Nov 1 7am",
+  "url": "",
+  "lat": 26.1762799,
+  "lon": -98.2396055,
+  "addr": "McAllen-Miller International Airport, 2500, South Bicentennial Boulevard, McAllen"
+ },
+ {
+  "id": "kungfunoodle",
+  "name": "Kung Fu Noodle",
+  "cat": "food",
+  "days": [
+   "25"
+  ],
+  "note": "Hand-pulled noodles, late",
+  "url": "",
+  "lat": 29.5402802,
+  "lon": -98.5838428,
+  "addr": "Kung Fu Noodle, 10415, Huebner Road, San Antonio"
+ },
+ {
+  "id": "berni",
+  "name": "Berni Vietnamese",
+  "cat": "food",
+  "days": [
+   "25"
+  ],
+  "note": "Pho, late + fast",
+  "url": "",
+  "lat": 29.5240585,
+  "lon": -98.5687482,
+  "addr": "Berni Vietnamese Restaurant, 8742, Wurzbach Road, Medical Center"
+ },
+ {
+  "id": "phothienan",
+  "name": "Pho Thien An",
+  "cat": "food",
+  "days": [
+   "25"
+  ],
+  "note": "Pho backup",
+  "url": "",
+  "lat": 29.516572999999998,
+  "lon": -98.49512899999999,
+  "addr": "126 W Rector Dr #108, San Antonio, TX 78216"
+ },
+ {
+  "id": "sichuanhose",
+  "name": "Sichuan Hose",
+  "cat": "food",
+  "days": [
+   "27"
+  ],
+  "note": "Sichuan, mapo tofu",
+  "url": "",
+  "lat": 29.471706599999997,
+  "lon": -98.62371259999999,
+  "addr": "3505 Wurzbach Rd #102, San Antonio, TX 78238"
+ },
+ {
+  "id": "sipsaam",
+  "name": "Sip Saam Thai",
+  "cat": "food",
+  "days": [
+   "27"
+  ],
+  "note": "Drunken noodles, curries",
+  "url": "",
+  "lat": 29.421294699999997,
+  "lon": -98.49072059999999,
+  "addr": "102 Navarro St, San Antonio, TX 78205"
+ },
+ {
+  "id": "tatsuya",
+  "name": "Ramen Tatsu-ya",
+  "cat": "food",
+  "days": [],
+  "note": "Austin ramen institution",
+  "url": "",
+  "lat": 30.2539603,
+  "lon": -97.7632851,
+  "addr": "Ramen Tatsu-ya, 1234, South Lamar Boulevard, Evergreen Heights"
+ },
+ {
+  "id": "titayas",
+  "name": "Titaya's Thai",
+  "cat": "food",
+  "days": [
+   "29"
+  ],
+  "note": "Khao soi",
+  "url": "",
+  "lat": 30.3235394,
+  "lon": -97.7274668,
+  "addr": "Titaya's Thai Cuisine, 5501, North Lamar Boulevard, Broadacres"
+ },
+ {
+  "id": "julies",
+  "name": "Julie's Noodles",
+  "cat": "food",
+  "days": [
+   "29"
+  ],
+  "note": "Handmade dumplings",
+  "url": "",
+  "lat": 30.3610671,
+  "lon": -97.7157829,
+  "addr": "8557 Research Blvd #110, Austin, TX 78758, United States"
+ },
+ {
+  "id": "phophongluu",
+  "name": "Pho Phong Luu",
+  "cat": "food",
+  "days": [],
+  "note": "Top-rated pho",
+  "url": "",
+  "lat": 30.3789069,
+  "lon": -97.6570164,
+  "addr": "Pho Phong Luu, 11800, Dessau Road, Austin"
+ },
+ {
+  "id": "phodan",
+  "name": "Pho Dan",
+  "cat": "food",
+  "days": [],
+  "note": "Top-rated pho",
+  "url": "",
+  "lat": 30.382049,
+  "lon": -97.6875611,
+  "addr": "Pho Dan, 112200, North Lamar Boulevard, Oak Ridge"
+ },
+ {
+  "id": "mirrormaze",
+  "name": "The Amazing Mirror Maze",
+  "cat": "fun",
+  "days": [],
+  "note": "3-floor mirror + laser maze, Alamo Plaza",
+  "url": "https://www.amazingmazes.com/",
+  "lat": 29.4250871,
+  "lon": -98.487239,
+  "addr": "217 Alamo Plaza, San Antonio, TX 78205"
+ },
+ {
+  "id": "hopscotch",
+  "name": "Hopscotch",
+  "cat": "fun",
+  "days": [],
+  "note": "Immersive art gallery, 40+ installations",
+  "url": "https://www.letshopscotch.com/",
+  "lat": 29.428150499999997,
+  "lon": -98.49004219999999,
+  "addr": "711 Navarro St Ste 100, San Antonio, TX 78205"
+ },
+ {
+  "id": "mcnay",
+  "name": "McNay Art Museum",
+  "cat": "museum",
+  "days": [],
+  "note": "Modern art, free general admission",
+  "url": "https://www.mcnayart.org/",
+  "lat": 29.4853379,
+  "lon": -98.4570441,
+  "addr": "McNay Art Museum, 6000, North New Braunfels Avenue, San Antonio"
+ },
+ {
+  "id": "samkt",
+  "name": "SA Farmers Market — Jackson Keller",
+  "cat": "farmers",
+  "days": [],
+  "note": "Tue & Sat 8am–1pm",
+  "url": "",
+  "lat": 29.4935622,
+  "lon": -98.4937617,
+  "addr": "100, Jackson Keller Road, San Antonio, Bexar County"
+ },
+ {
+  "id": "samhuebner",
+  "name": "SA Farmers Market — Huebner",
+  "cat": "farmers",
+  "days": [],
+  "note": "Mon 8am–1pm (Apr–Oct)",
+  "url": "",
+  "lat": 29.5866611,
+  "lon": -98.530738,
+  "addr": "16320, Huebner Road, San Antonio, Bexar County"
+ },
+ {
+  "id": "topnotch",
+  "name": "Top Notch Timepieces",
+  "cat": "watch",
+  "days": [],
+  "note": "By appointment only",
+  "url": "",
+  "lat": 29.567011,
+  "lon": -98.520862,
+  "addr": "13300, Old Blanco Road, San Antonio, Bexar County"
+ },
+ {
+  "id": "leemichaels",
+  "name": "Lee Michaels Fine Jewelry",
+  "cat": "watch",
+  "days": [],
+  "note": "Official Rolex jeweler, on the Boerne drive",
+  "url": "",
+  "lat": 29.5946116,
+  "lon": -98.6160206,
+  "addr": "15900 La Cantera Pkwy Ste 3360, San Antonio, TX 78256"
+ },
+ {
+  "id": "kawaiiklaws",
+  "name": "Kawaii Klaws",
+  "cat": "arcade",
+  "days": [],
+  "note": "All-claw arcade, cute + low-key",
+  "url": "",
+  "lat": 29.4692791,
+  "lon": -98.6209278,
+  "addr": "Ingram Park Mall, 6301, Northwest Loop 410, San Antonio"
+ },
+ {
+  "id": "cosmicbandera",
+  "name": "Cosmic Claw (Bandera Rd)",
+  "cat": "arcade",
+  "days": [],
+  "note": "Sister claw arcade",
+  "url": "",
+  "lat": 29.4709487,
+  "lon": -98.5738452,
+  "addr": "1833, Bandera Road, San Antonio, Bexar County"
+ },
+ {
+  "id": "cosmicmilitary",
+  "name": "Cosmic Claw (SW Military Dr)",
+  "cat": "arcade",
+  "days": [],
+  "note": "Sister claw arcade",
+  "url": "",
+  "lat": 29.3567544,
+  "lon": -98.5095552,
+  "addr": "1121, Southwest Military Drive, San Antonio, Bexar County"
+ },
+ {
+  "id": "cathedral",
+  "name": "Cathedral of Junk",
+  "cat": "fun",
+  "days": [],
+  "note": "3-story folk art, donation, call ahead",
+  "url": "https://www.roadsideamerica.com/story/7816",
+  "lat": 30.2186884,
+  "lon": -97.7717656,
+  "addr": "Cathedral of Junk, Lareina Drive, Oldham Addition, Austin"
+ },
+ {
+  "id": "bonnell",
+  "name": "Mount Bonnell",
+  "cat": "sight",
+  "days": [],
+  "note": "Best sunset view in Austin, free",
+  "url": "",
+  "lat": 30.3207674,
+  "lon": -97.7733474,
+  "addr": "Mount Bonnell, Austin, Travis County, Texas"
+ },
+ {
+  "id": "barton",
+  "name": "Barton Springs Pool",
+  "cat": "park",
+  "days": [],
+  "note": "68–70°F spring-fed pool, $5",
+  "url": "",
+  "lat": 30.2638447,
+  "lon": -97.7701429,
+  "addr": "Barton Springs Pool, William Barton Drive, Austin, Travis County"
+ },
+ {
+  "id": "hamilton",
+  "name": "Hamilton Pool Preserve",
+  "cat": "park",
+  "days": [],
+  "note": "Grotto + waterfall, reservation required",
+  "url": "",
+  "lat": 30.3428689,
+  "lon": -98.1325241,
+  "addr": "Hamilton Pool Preserve, 24300, Dripping Springs, Travis County"
+ },
+ {
+  "id": "skyspace",
+  "name": "Skyspace: The Color Inside",
+  "cat": "sight",
+  "days": [],
+  "note": "Turrell installation, sunset, reserve",
+  "url": "",
+  "lat": 30.284835599999997,
+  "lon": -97.7363525,
+  "addr": "2201 Speedway, Austin, TX 78712"
+ },
+ {
+  "id": "zadok",
+  "name": "Zadok Jewelers",
+  "cat": "watch",
+  "days": [],
+  "note": "Watch selection, Domain",
+  "url": "",
+  "lat": 30.401742,
+  "lon": -97.7260525,
+  "addr": "11501 Century Oaks Terrace Ste 141, Austin, TX 78758"
+ },
+ {
+  "id": "sfc",
+  "name": "SFC Farmers' Market Downtown",
+  "cat": "farmers",
+  "days": [],
+  "note": "Sat 9am–1pm",
+  "url": "",
+  "lat": 30.2673262,
+  "lon": -97.7475644,
+  "addr": "422 Guadalupe St, Austin, TX 78701"
+ },
+ {
+  "id": "mueller",
+  "name": "Texas Farmers' Market at Mueller",
+  "cat": "farmers",
+  "days": [],
+  "note": "Sun 10am–2pm",
+  "url": "",
+  "lat": 30.299843,
+  "lon": -97.7026528,
+  "addr": "2006, Philomena Street, Aldrich Street District, Austin"
+ },
+ {
+  "id": "arcadeufo",
+  "name": "Arcade UFO",
+  "cat": "arcade",
+  "days": [],
+  "note": "Imported fighting/rhythm cabinets, no claws",
+  "url": "",
+  "lat": 30.373129,
+  "lon": -97.7241597,
+  "addr": "Arcade UFO, 9029, Research Boulevard, Austin"
+ },
+ {
+  "id": "clawfun",
+  "name": "Claw & Fun",
+  "cat": "arcade",
+  "days": [],
+  "note": "Claws + arcade + VR",
+  "url": "",
+  "lat": 30.256975399999998,
+  "lon": -97.8081734,
+  "addr": "2901 S Capital of Texas Hwy G01A, Austin, TX 78746"
+ },
+ {
+  "id": "clutchem",
+  "name": "Clutch-Em Arcade",
+  "cat": "arcade",
+  "days": [],
+  "note": "UFO claws, staff reposition plushies",
+  "url": "",
+  "lat": 30.325234299999998,
+  "lon": -97.7075357,
+  "addr": "6406 N Interstate 35 Frontage Rd #2520, Austin, TX 78752"
+ }
+];
+const CATS = {"cave": {"label": "Caves", "color": "#8B5E3C", "emoji": "🦇"}, "museum": {"label": "Museums", "color": "#6A4C93", "emoji": "🏛"}, "arcade": {"label": "Arcades", "color": "#E4572E", "emoji": "🕹"}, "watch": {"label": "Watches", "color": "#1F6F8B", "emoji": "⌚"}, "food": {"label": "Food", "color": "#C2185B", "emoji": "🍜"}, "farmers": {"label": "Markets", "color": "#2E9E4F", "emoji": "🌾"}, "park": {"label": "Outdoors", "color": "#2E7D32", "emoji": "🌳"}, "sight": {"label": "Sights", "color": "#1565C0", "emoji": "📍"}, "fun": {"label": "Fun", "color": "#F9A825", "emoji": "🎨"}, "travel": {"label": "Travel", "color": "#455A64", "emoji": "✈️"}};
+const DAYLABEL = {"all": "All", "25": "Sat 25", "26": "Sun 26", "27": "Mon 27", "28": "Tue 28", "29": "Wed 29", "30": "Thu 30", "31": "Fri 31", "extras": "Extras"};
+
+const map = L.map('map', {zoomControl:true, scrollWheelZoom:true}).setView([29.9,-98.3], 7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 20
+}).addTo(map);
+
+let activeDay = 'all';
+const offCats = new Set();
+const markers = {};
+
+function matches(p) {
+  if (offCats.has(p.cat)) return false;
+  if (activeDay === 'all') return true;
+  if (activeDay === 'extras') return p.days.length === 0;
+  return p.days.includes(activeDay);
+}
+
+function gmaps(p) {
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(p.lat + ',' + p.lon);
+}
+
+PLACES.forEach(p => {
+  const c = CATS[p.cat] || {color:'#444', emoji:'•'};
+  const icon = L.divIcon({
+    className:'', iconSize:[22,22], iconAnchor:[11,11], popupAnchor:[0,-12],
+    html: '<div class="pin" style="background:' + c.color + '">' + c.emoji + '</div>'
+  });
+  const m = L.marker([p.lat, p.lon], {icon}).addTo(map);
+  const site = p.url ? '<a href="' + p.url + '" target="_blank" rel="noopener">Website</a>' : '';
+  m.bindPopup('<div class="pop"><b>' + p.name + '</b>' +
+    (p.note ? '<div class="n" style="color:#374151;margin-top:3px">' + p.note + '</div>' : '') +
+    '<div class="n">' + p.addr + '</div>' +
+    '<div style="margin-top:5px"><a href="' + gmaps(p) + '" target="_blank" rel="noopener">Directions</a>' + site + '</div></div>');
+  markers[p.id] = m;
+});
+
+function renderPanel() {
+  const vis = PLACES.filter(matches);
+  const order = ['25','26','27','28','29','30','31','extras'];
+  let h = '';
+  order.forEach(d => {
+    const items = vis.filter(p => d === 'extras' ? p.days.length === 0 : p.days.includes(d));
+    if (!items.length) return;
+    h += '<div class="dayhead">' + DAYLABEL[d] + '</div>';
+    items.forEach(p => {
+      h += '<div class="row" data-id="' + p.id + '"><span class="e">' + CATS[p.cat].emoji + '</span>' +
+           '<span><span class="nm">' + p.name + '</span><span class="sub"><br>' + (p.note || p.addr) + '</span></span></div>';
+    });
+  });
+  document.getElementById('panel').innerHTML = h;
+  document.querySelectorAll('.row').forEach(r => r.onclick = () => {
+    const p = PLACES.find(x => x.id === r.dataset.id);
+    map.flyTo([p.lat, p.lon], 14, {duration: .7});
+    setTimeout(() => markers[p.id].openPopup(), 750);
+  });
+}
+
+function refresh() {
+  PLACES.forEach(p => {
+    const el = markers[p.id].getElement();
+    if (matches(p)) { markers[p.id].addTo(map); if (el) el.querySelector('.pin').classList.remove('dim'); }
+    else { map.removeLayer(markers[p.id]); }
+  });
+  renderPanel();
+}
+
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  activeDay = b.dataset.day;
+  refresh();
+  const vis = PLACES.filter(matches);
+  if (vis.length && activeDay !== 'all') {
+    map.fitBounds(L.latLngBounds(vis.map(p => [p.lat, p.lon])).pad(.25), {maxZoom: 12});
+  }
+});
+
+document.querySelectorAll('.leg').forEach(l => l.onclick = () => {
+  const c = l.dataset.cat;
+  if (offCats.has(c)) { offCats.delete(c); l.classList.remove('off'); }
+  else { offCats.add(c); l.classList.add('off'); }
+  refresh();
+});
+
+renderPanel();
+map.fitBounds(L.latLngBounds(PLACES.map(p => [p.lat, p.lon])).pad(.06));
+</script>
+</body>
+</html>
